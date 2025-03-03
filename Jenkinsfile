@@ -1,52 +1,52 @@
 pipeline {
-    agent any  // Runs on any available Jenkins agent
+    agent any
 
     environment {
-        GIT_REPO = 'https://github.com/adityaband460/git_automation.git'
+        REPO_URL = 'https://github.com/adityaband460/git_automation.git'
         BRANCH = 'main'
-        GIT_USER = 'Adityaband460'
-        GIT_EMAIL = 'adityaband460@gmail.com'
-        PAT = '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'  // Replace with your GitHub PAT
     }
 
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: "${BRANCH}", url: "${GIT_REPO}"
+                git branch: "${BRANCH}", url: "${REPO_URL}"
             }
         }
 
         stage('Build') {
             steps {
-                sh 'make'  // Runs the Makefile to compile the C++ project
+                sh 'make'
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh './bin/app'  // Run the compiled C++ binary
+                sh './bin/app'
             }
         }
 
         stage('Push Back to GitHub') {
             steps {
-                sh '''
-                git config --global user.name "${GIT_USER}"
-                git config --global user.email "${GIT_EMAIL}"
-                git add .
-                git commit -m "Automated Build - $(date)" || echo "No changes to commit"
-                git push https://${PAT}@github.com/adityaband460/git_automation.git ${BRANCH}
-                '''
+                withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                    sh '''
+                        git config --global user.name "adityaband460"
+                        git config --global user.email "adityaband460@gmail.com"
+                        git add .
+                        date
+                        git commit -m "Automated Build - $(date)"
+                        git push https://$GIT_USER:$GIT_PASS@github.com/adityaband460/git_automation.git main
+                    '''
+                }
             }
         }
     }
 
     post {
         success {
-            echo '✅ Build and Deployment Successful!'
+            echo "✅ Build and Push Successful!"
         }
         failure {
-            echo '❌ Build Failed!'
+            echo "❌ Build Failed!"
         }
     }
 }
